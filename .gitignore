@@ -1,0 +1,50 @@
+# 环境配置（全局）
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# 运行时
+logs/
+pids/
+*.pid
+*.log
+cache/
+*.cache
+*.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# 导出数据
+data_export/
+
+# 屏蔽目录
+backups/
+docs/
+libs/external/
+
+# 临时文件
+1
+2
+3
+
+# 内部文档
+AGENTS.md
+
+# 配置文件（含凭证）
+**/config.json
+!**/config.example.json
+**/ft_userdir/
+libs/external/
