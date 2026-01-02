@@ -324,23 +324,35 @@ class RankingDataProvider:
 
     # ---------------- 公共读取 ----------------
     def fetch_base(self, period: str) -> Dict[str, Dict]:
-        """按周期取基础数据（使用 datetime 比较时间戳）"""
+        """按周期取基础数据 - 只取最新批次（同一时间戳）"""
         rows = self._load_table_period("基础数据", period)
         target_period = _normalize_period_value(period)
-        latest: Dict[str, Dict] = {}
-        latest_ts: Dict[str, datetime] = {}
+        
+        # 第一遍：找出最新时间戳
+        max_ts = datetime.min
         for row in rows:
             r = dict(row)
-            r_period = _normalize_period_value(str(r.get("周期")))
+            r_period = _normalize_period_value(str(r.get("周期", "")))
             if r_period != target_period:
                 continue
-            sym = str(r.get("交易对", "")).upper()
-            if not sym:
+            ts = _parse_timestamp(str(r.get("数据时间", "")))
+            if ts > max_ts:
+                max_ts = ts
+        
+        if max_ts == datetime.min:
+            return {}
+        
+        # 第二遍：只取最新时间戳的数据
+        latest: Dict[str, Dict] = {}
+        for row in rows:
+            r = dict(row)
+            r_period = _normalize_period_value(str(r.get("周期", "")))
+            if r_period != target_period:
                 continue
             ts = _parse_timestamp(str(r.get("数据时间", "")))
-            if sym not in latest or ts > latest_ts.get(sym, datetime.min):
+            sym = str(r.get("交易对", "")).upper()
+            if ts == max_ts and sym and sym not in latest:
                 latest[sym] = r
-                latest_ts[sym] = ts
         return latest
 
     def fetch_metric(self, table: str, period: str) -> List[Dict]:
