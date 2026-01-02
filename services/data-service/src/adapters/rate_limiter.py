@@ -48,7 +48,7 @@ class GlobalLimiter:
         try:
             if _BAN_FILE.exists():
                 self._ban_until = float(_BAN_FILE.read_text().strip())
-        except:
+        except Exception:
             pass
     
     def _save_ban(self):
@@ -56,7 +56,7 @@ class GlobalLimiter:
             tmp = _BAN_FILE.with_suffix('.tmp')
             tmp.write_text(str(self._ban_until))
             tmp.rename(_BAN_FILE)
-        except:
+        except Exception:
             pass
     
     def set_ban(self, until: float):
@@ -96,7 +96,7 @@ class GlobalLimiter:
             if _STATE_FILE.exists():
                 d = json.loads(_STATE_FILE.read_text())
                 return d.get("tokens", self.capacity), d.get("last", time.time())
-        except:
+        except Exception:
             pass
         return self.capacity, time.time()
     
@@ -105,7 +105,7 @@ class GlobalLimiter:
             tmp = _STATE_FILE.with_suffix('.tmp')
             tmp.write_text(json.dumps({"tokens": tokens, "last": last}))
             tmp.rename(_STATE_FILE)
-        except:
+        except Exception:
             pass
     
     def acquire(self, weight: int = 1):
@@ -114,7 +114,7 @@ class GlobalLimiter:
         self._sem.acquire()
         try:
             self._acquire_tokens(weight)
-        except:
+        except Exception:
             self._sem.release()
             raise
     
