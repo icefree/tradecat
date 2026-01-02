@@ -32,14 +32,14 @@ def calc_harmonic(df: pd.DataFrame) -> float:
 
 @register
 class Harmonic(Indicator):
-    meta = IndicatorMeta(name="谐波信号扫描器.py", lookback=50, is_incremental=False, min_data=35)
+    meta = IndicatorMeta(name="谐波信号扫描器.py", lookback=50, is_incremental=False)
 
     def compute(self, df: pd.DataFrame, symbol: str, interval: str) -> pd.DataFrame:
-        if not self._check_data(df):
-            return self._make_insufficient_result(df, symbol, interval, {"谐波值": None})
+        if len(df) < max(RSI_PERIODS) + 2:
+            return pd.DataFrame()
         val = calc_harmonic(df)
         if val is None:
-            return self._make_insufficient_result(df, symbol, interval, {"谐波值": None})
+            return pd.DataFrame()
         return self._make_result(df, symbol, interval, {
             "谐波值": round(val, 2),
         })

@@ -6,17 +6,17 @@ from ..base import Indicator, IndicatorMeta, register
 
 @register
 class VolumeRatio(Indicator):
-    meta = IndicatorMeta(name="成交量比率扫描器.py", lookback=30, is_incremental=False, min_data=25)
+    meta = IndicatorMeta(name="成交量比率扫描器.py", lookback=30, is_incremental=False)
     
     def compute(self, df: pd.DataFrame, symbol: str, interval: str) -> pd.DataFrame:
-        if not self._check_data(df):
-            return self._make_insufficient_result(df, symbol, interval, {"量比": None, "信号概述": None})
+        if len(df) < 25:
+            return pd.DataFrame()
         vol = df["volume"]
         avg = vol.rolling(20, min_periods=20).mean()
         ratio = vol / avg
         cur = ratio.iloc[-1]
         if math.isnan(cur) or math.isinf(cur):
-            return self._make_insufficient_result(df, symbol, interval, {"量比": None, "信号概述": None})
+            return pd.DataFrame()
         if cur > 5:
             signal = "极值放量"
         elif cur > 2:

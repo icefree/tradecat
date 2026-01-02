@@ -75,13 +75,13 @@ def calc_supertrend(high: np.ndarray, low: np.ndarray, close: np.ndarray, period
 
 @register
 class SuperTrendLean(Indicator):
-    meta = IndicatorMeta(name="SuperTrend.py", lookback=60, is_incremental=False, min_data=10)
+    meta = IndicatorMeta(name="SuperTrend.py", lookback=60, is_incremental=False)
     
     def compute(self, df: pd.DataFrame, symbol: str, interval: str) -> pd.DataFrame:
-        if not self._check_data(df):
-            return self._make_insufficient_result(df, symbol, interval, {"SuperTrend": None, "方向": None})
+        if len(df) < 10:
+            return pd.DataFrame()
         res = calc_supertrend(df["high"].values, df["low"].values, df["close"].values)
-        return self._make_result(df, symbol, interval, res) if res else self._make_insufficient_result(df, symbol, interval, {"SuperTrend": None, "方向": None})
+        return self._make_result(df, symbol, interval, res) if res else pd.DataFrame()
 
 
 # ==================== ADX ====================
@@ -121,13 +121,13 @@ def calc_adx(high: np.ndarray, low: np.ndarray, close: np.ndarray, period: int =
 
 @register
 class ADXIndicator(Indicator):
-    meta = IndicatorMeta(name="ADX.py", lookback=70, is_incremental=False, min_data=28)
+    meta = IndicatorMeta(name="ADX.py", lookback=70, is_incremental=False)
     
     def compute(self, df: pd.DataFrame, symbol: str, interval: str) -> pd.DataFrame:
-        if not self._check_data(df):
-            return self._make_insufficient_result(df, symbol, interval, {"ADX": None, "正向DI": None, "负向DI": None})
+        if len(df) < 28:
+            return pd.DataFrame()
         res = calc_adx(df["high"].values, df["low"].values, df["close"].values)
-        return self._make_result(df, symbol, interval, res) if res else self._make_insufficient_result(df, symbol, interval, {"ADX": None})
+        return self._make_result(df, symbol, interval, res) if res else pd.DataFrame()
 
 
 # ==================== CCI ====================
@@ -150,13 +150,13 @@ def calc_cci(high: np.ndarray, low: np.ndarray, close: np.ndarray, period: int =
 
 @register
 class CCIIndicator(Indicator):
-    meta = IndicatorMeta(name="CCI.py", lookback=60, is_incremental=False, min_data=20)
+    meta = IndicatorMeta(name="CCI.py", lookback=60, is_incremental=False)
     
     def compute(self, df: pd.DataFrame, symbol: str, interval: str) -> pd.DataFrame:
-        if not self._check_data(df):
-            return self._make_insufficient_result(df, symbol, interval, {"CCI": None})
+        if len(df) < 20:
+            return pd.DataFrame()
         res = calc_cci(df["high"].values, df["low"].values, df["close"].values)
-        return self._make_result(df, symbol, interval, res) if res else self._make_insufficient_result(df, symbol, interval, {"CCI": None})
+        return self._make_result(df, symbol, interval, res) if res else pd.DataFrame()
 
 
 # ==================== WilliamsR ====================
@@ -175,13 +175,13 @@ def calc_williams_r(high: np.ndarray, low: np.ndarray, close: np.ndarray, period
 
 @register
 class WilliamsRIndicator(Indicator):
-    meta = IndicatorMeta(name="WilliamsR.py", lookback=42, is_incremental=False, min_data=14)
+    meta = IndicatorMeta(name="WilliamsR.py", lookback=42, is_incremental=False)
     
     def compute(self, df: pd.DataFrame, symbol: str, interval: str) -> pd.DataFrame:
-        if not self._check_data(df):
-            return self._make_insufficient_result(df, symbol, interval, {"WilliamsR": None})
+        if len(df) < 14:
+            return pd.DataFrame()
         res = calc_williams_r(df["high"].values, df["low"].values, df["close"].values)
-        return self._make_result(df, symbol, interval, res) if res else self._make_insufficient_result(df, symbol, interval, {"WilliamsR": None})
+        return self._make_result(df, symbol, interval, res) if res else pd.DataFrame()
 
 
 # ==================== Donchian ====================
@@ -195,13 +195,13 @@ def calc_donchian(high: np.ndarray, low: np.ndarray, period: int = 20) -> dict:
 
 @register
 class DonchianIndicator(Indicator):
-    meta = IndicatorMeta(name="Donchian.py", lookback=60, is_incremental=False, min_data=20)
+    meta = IndicatorMeta(name="Donchian.py", lookback=60, is_incremental=False)
     
     def compute(self, df: pd.DataFrame, symbol: str, interval: str) -> pd.DataFrame:
-        if not self._check_data(df):
-            return self._make_insufficient_result(df, symbol, interval, {"上轨": None, "中轨": None, "下轨": None})
+        if len(df) < 20:
+            return pd.DataFrame()
         res = calc_donchian(df["high"].values, df["low"].values)
-        return self._make_result(df, symbol, interval, res) if res else self._make_insufficient_result(df, symbol, interval, {"上轨": None})
+        return self._make_result(df, symbol, interval, res) if res else pd.DataFrame()
 
 
 # ==================== Keltner ====================
@@ -224,13 +224,13 @@ def calc_keltner(high: np.ndarray, low: np.ndarray, close: np.ndarray,
 
 @register
 class KeltnerIndicator(Indicator):
-    meta = IndicatorMeta(name="Keltner.py", lookback=60, is_incremental=False, min_data=20)
+    meta = IndicatorMeta(name="Keltner.py", lookback=60, is_incremental=False)
     
     def compute(self, df: pd.DataFrame, symbol: str, interval: str) -> pd.DataFrame:
-        if not self._check_data(df):
-            return self._make_insufficient_result(df, symbol, interval, {"上轨": None, "中轨": None, "下轨": None})
+        if len(df) < 20:
+            return pd.DataFrame()
         res = calc_keltner(df["high"].values, df["low"].values, df["close"].values)
-        return self._make_result(df, symbol, interval, res) if res else self._make_insufficient_result(df, symbol, interval, {"上轨": None})
+        return self._make_result(df, symbol, interval, res) if res else pd.DataFrame()
 
 
 # ==================== Ichimoku ====================
@@ -272,10 +272,10 @@ def calc_ichimoku(high: np.ndarray, low: np.ndarray, close: np.ndarray,
 
 @register
 class IchimokuIndicator(Indicator):
-    meta = IndicatorMeta(name="Ichimoku.py", lookback=120, is_incremental=False, min_data=26)
+    meta = IndicatorMeta(name="Ichimoku.py", lookback=120, is_incremental=False)
     
     def compute(self, df: pd.DataFrame, symbol: str, interval: str) -> pd.DataFrame:
-        if not self._check_data(df):
-            return self._make_insufficient_result(df, symbol, interval, {"信号": None, "方向": None})
+        if len(df) < 26:
+            return pd.DataFrame()
         res = calc_ichimoku(df["high"].values, df["low"].values, df["close"].values)
-        return self._make_result(df, symbol, interval, res) if res else self._make_insufficient_result(df, symbol, interval, {"信号": None})
+        return self._make_result(df, symbol, interval, res) if res else pd.DataFrame()
