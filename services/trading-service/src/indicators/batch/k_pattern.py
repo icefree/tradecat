@@ -88,40 +88,36 @@ def _detect_talib(df: pd.DataFrame) -> dict:
 
 
 def _detect_tradingpatterns(ohlcv: pd.DataFrame) -> dict:
-    """tradingpatterns 库检测"""
+    """tradingpatterns 库检测（pip install tradingpattern --no-deps）"""
     results = {}
     try:
-        import tradingpatterns.patterns as tp
-        mapping = {
-            "detect_bull_flag": ("bull_flag", 1.0),
-            "detect_bear_flag": ("bear_flag", -1.0),
-            "detect_ascending_triangle": ("ascending_triangle", 1.0),
-            "detect_descending_triangle": ("descending_triangle", -1.0),
-            "detect_symmetrical_triangle": ("symmetrical_triangle", 0.8),
-            "detect_rising_wedge": ("rising_wedge", -1.2),
-            "detect_falling_wedge": ("falling_wedge", 1.2),
-        }
-        for fn_name, (key, score) in mapping.items():
-            fn = getattr(tp, fn_name, None)
-            if fn:
-                try:
-                    if fn(ohlcv):
-                        results[key] = score
-                except:
-                    pass
-        # 自动补齐其他 detect_*
-        for name in dir(tp):
-            if name.startswith("detect_") and name not in mapping:
-                fn = getattr(tp, name, None)
-                if callable(fn):
-                    try:
-                        res = fn(ohlcv)
-                        if res and (not hasattr(res, '__len__') or len(res) > 0):
-                            lname = name.lower()
-                            score = -1.0 if any(k in lname for k in ["bear", "down", "fall", "descend"]) else 1.0
-                            results[name.replace("detect_", "")] = score
-                    except:
-                        pass
+        from tradingpatterns import tradingpatterns as tp
+        # 准备数据：需要 Open/High/Low/Close 列
+        df = ohlcv.copy()
+        for col in ["open", "high", "low", "close"]:
+            if col in df.columns:
+                df[col.capitalize()] = df[col]
+        pivot_df = tp.find_pivots(df)
+        
+        detectors = [
+            (tp.detect_head_shoulder, {"Head and Shoulder": -1.5, "Inverse Head and Shoulder": 1.5}),
+            (tp.detect_double_top_bottom, {"Double Top": -1.2, "Double Bottom": 1.2}),
+            (tp.detect_triangle_pattern, {"Ascending Triangle": 1.0, "Descending Triangle": -1.0, "Symmetrical Triangle": 0.8}),
+            (tp.detect_wedge, {"Rising Wedge": -1.2, "Falling Wedge": 1.2}),
+            (tp.detect_channel, {"Rising Channel": 1.0, "Falling Channel": -1.0, "Horizontal Channel": 0.5}),
+        ]
+        for fn, patterns in detectors:
+            try:
+                res = fn(pivot_df)
+                if isinstance(res, pd.DataFrame):
+                    for col in res.columns:
+                        if "pattern" in col.lower():
+                            last = res[col].dropna().iloc[-1] if len(res[col].dropna()) > 0 else None
+                            if last and last in patterns:
+                                key = last.lower().replace(" ", "_")
+                                results[key] = patterns[last]
+            except:
+                pass
     except ImportError:
         pass
     return results

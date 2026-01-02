@@ -66,3 +66,16 @@ services/telegram-service/logs/
 services/telegram-service/docs/
 services/telegram-service/data/
 libs/database/db/state/
+
+# 备份数据（太大）
+backups/
+exports/
+*.zst
+*.dump
+
+# 守护进程
+daemon.pid
+daemon.log
+
+# 本地历史
+.history/

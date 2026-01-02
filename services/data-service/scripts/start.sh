@@ -1,32 +1,26 @@
-#!/bin/bash
-# Data Service 启动 + 守护脚本
-set -euo pipefail
+#!/usr/bin/env bash
+# data-service 启动/守护一体脚本
+# 用法: ./scripts/start.sh {start|stop|status|daemon}
 
-cd "$(dirname "$0")/.."
-ROOT=$(pwd)
-LOG_DIR="$ROOT/logs"
-PID_DIR="$ROOT/pids"
+set -uo pipefail
 
-mkdir -p "$LOG_DIR" "$PID_DIR"
+# ==================== 配置区 ====================
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SERVICE_DIR="$(dirname "$SCRIPT_DIR")"
+RUN_DIR="$SERVICE_DIR/pids"
+LOG_DIR="$SERVICE_DIR/logs"
+DAEMON_PID="$RUN_DIR/daemon.pid"
+DAEMON_LOG="$LOG_DIR/daemon.log"
+CHECK_INTERVAL="${CHECK_INTERVAL:-30}"
+STOP_TIMEOUT=10
 
-# 颜色
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[0;33m'
-NC='\033[0m'
+# 服务组件
+COMPONENTS=(backfill metrics ws)
 
-# ========== 启动函数 ==========
-start_backfill() {
-    echo -e "${GREEN}[1/3] 启动数据补齐...${NC}"
-    PYTHONPATH=src nohup python3 -m collectors.backfill --all --lookback 7 \
-        > "$LOG_DIR/backfill.log" 2>&1 &
-    echo $! > "$PID_DIR/backfill.pid"
-    echo "  PID: $(cat $PID_DIR/backfill.pid)"
-}
-
-start_metrics() {
-    echo -e "${GREEN}[2/3] 启动 Metrics 采集...${NC}"
-    PYTHONPATH=src nohup python3 -c "
+# 启动命令
+declare -A START_CMDS=(
+    [backfill]="python3 -m collectors.backfill --all --lookback 7"
+    [metrics]="python3 -c \"
 import time, logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 from collectors.metrics import MetricsCollector
@@ -37,79 +31,218 @@ while True:
     except Exception as e:
         logging.error('Metrics error: %s', e)
     time.sleep(300)
-" > "$LOG_DIR/metrics.log" 2>&1 &
-    echo $! > "$PID_DIR/metrics.pid"
-    echo "  PID: $(cat $PID_DIR/metrics.pid)"
+\""
+    [ws]="python3 -m collectors.ws"
+)
+
+# ==================== 工具函数 ====================
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$DAEMON_LOG"
 }
 
-start_ws() {
-    echo -e "${GREEN}[3/3] 启动 WebSocket 采集...${NC}"
-    PYTHONPATH=src nohup python3 -m collectors.ws > "$LOG_DIR/ws.log" 2>&1 &
-    echo $! > "$PID_DIR/ws.pid"
-    echo "  PID: $(cat $PID_DIR/ws.pid)"
+init_dirs() {
+    mkdir -p "$RUN_DIR" "$LOG_DIR"
 }
 
-# ========== 控制函数 ==========
+read_pid() {
+    local pid_file="$1"
+    [ -f "$pid_file" ] && cat "$pid_file" || echo ""
+}
+
+is_running() {
+    local pid="$1"
+    [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
+}
+
+get_uptime() {
+    local pid="$1"
+    if is_running "$pid"; then
+        local start_time=$(ps -o lstart= -p "$pid" 2>/dev/null)
+        if [ -n "$start_time" ]; then
+            local start_sec=$(date -d "$start_time" +%s 2>/dev/null)
+            local now_sec=$(date +%s)
+            local diff=$((now_sec - start_sec))
+            printf "%dd %dh %dm" $((diff/86400)) $((diff%86400/3600)) $((diff%3600/60))
+        fi
+    fi
+}
+
+# ==================== 服务控制 ====================
+start_component() {
+    local name="$1"
+    local pid_file="$RUN_DIR/${name}.pid"
+    local log_file="$LOG_DIR/${name}.log"
+    local pid=$(read_pid "$pid_file")
+    
+    if is_running "$pid"; then
+        echo "  $name: 已运行 (PID: $pid)"
+        return 0
+    fi
+    
+    cd "$SERVICE_DIR"
+    source .venv/bin/activate
+    PYTHONPATH=src nohup bash -c "${START_CMDS[$name]}" >> "$log_file" 2>&1 &
+    local new_pid=$!
+    echo "$new_pid" > "$pid_file"
+    
+    sleep 1
+    if is_running "$new_pid"; then
+        log "START $name (PID: $new_pid)"
+        echo "  $name: 已启动 (PID: $new_pid)"
+        return 0
+    else
+        log "ERROR $name 启动失败"
+        echo "  $name: 启动失败"
+        rm -f "$pid_file"
+        return 1
+    fi
+}
+
+stop_component() {
+    local name="$1"
+    local pid_file="$RUN_DIR/${name}.pid"
+    local pid=$(read_pid "$pid_file")
+    
+    if ! is_running "$pid"; then
+        rm -f "$pid_file"
+        echo "  $name: 未运行"
+        return 0
+    fi
+    
+    # 优雅停止
+    kill -TERM "$pid" 2>/dev/null
+    local waited=0
+    while is_running "$pid" && [ $waited -lt $STOP_TIMEOUT ]; do
+        sleep 1
+        ((waited++))
+    done
+    
+    # 强制停止
+    if is_running "$pid"; then
+        kill -KILL "$pid" 2>/dev/null
+        log "KILL $name (PID: $pid) 强制终止"
+    else
+        log "STOP $name (PID: $pid)"
+    fi
+    
+    rm -f "$pid_file"
+    echo "  $name: 已停止"
+}
+
+# ==================== 批量操作 ====================
 start_all() {
-    start_backfill
-    sleep 2
-    start_metrics
-    start_ws
-    echo -e "\n${GREEN}全部启动完成${NC}"
+    echo "=== 启动全部服务 ==="
+    for name in "${COMPONENTS[@]}"; do
+        start_component "$name"
+    done
 }
 
 stop_all() {
-    echo "停止所有服务..."
-    for pid_file in "$PID_DIR"/*.pid; do
-        [ -f "$pid_file" ] || continue
-        pid=$(cat "$pid_file")
-        if kill -0 "$pid" 2>/dev/null; then
-            kill "$pid" && echo "  停止 PID $pid"
-        fi
-        rm -f "$pid_file"
+    echo "=== 停止全部服务 ==="
+    for name in "${COMPONENTS[@]}"; do
+        stop_component "$name"
     done
 }
 
-status() {
+status_all() {
     echo "=== 服务状态 ==="
-    for name in backfill metrics ws; do
-        pid_file="$PID_DIR/${name}.pid"
-        if [ -f "$pid_file" ] && kill -0 "$(cat "$pid_file")" 2>/dev/null; then
-            echo -e "  ${GREEN}$name: 运行中 (PID $(cat $pid_file))${NC}"
+    for name in "${COMPONENTS[@]}"; do
+        local pid_file="$RUN_DIR/${name}.pid"
+        local pid=$(read_pid "$pid_file")
+        if is_running "$pid"; then
+            local uptime=$(get_uptime "$pid")
+            echo "  ✓ $name: 运行中 (PID: $pid, 运行: $uptime)"
         else
-            echo -e "  ${RED}$name: 未运行${NC}"
+            [ -f "$pid_file" ] && rm -f "$pid_file"
+            echo "  ✗ $name: 未运行"
         fi
     done
 }
 
-# ========== 守护进程 ==========
-daemon() {
-    echo -e "${YELLOW}=== 守护进程启动 (间隔30秒) ===${NC}"
+# ==================== 守护进程 ====================
+monitor_loop() {
+    log "=== 守护进程启动 (间隔: ${CHECK_INTERVAL}s) ==="
     while true; do
-        for name in backfill metrics ws; do
-            pid_file="$PID_DIR/${name}.pid"
-            if [ ! -f "$pid_file" ] || ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
-                echo "[$(date '+%H:%M:%S')] $name 重启..."
-                start_$name
+        for name in "${COMPONENTS[@]}"; do
+            local pid_file="$RUN_DIR/${name}.pid"
+            local pid=$(read_pid "$pid_file")
+            if ! is_running "$pid"; then
+                [ -f "$pid_file" ] && rm -f "$pid_file"
+                log "CHECK $name 未运行，重启..."
+                start_component "$name" > /dev/null
             fi
         done
-        sleep 30
+        sleep "$CHECK_INTERVAL"
     done
 }
 
-# ========== 入口 ==========
+daemon_start() {
+    local pid=$(read_pid "$DAEMON_PID")
+    if is_running "$pid"; then
+        echo "守护进程已运行 (PID: $pid)"
+        return 0
+    fi
+    
+    init_dirs
+    start_all
+    
+    nohup "$0" _monitor >> "$DAEMON_LOG" 2>&1 &
+    echo $! > "$DAEMON_PID"
+    echo "守护进程已启动 (PID: $!)"
+}
+
+daemon_stop() {
+    local pid=$(read_pid "$DAEMON_PID")
+    if is_running "$pid"; then
+        kill -TERM "$pid" 2>/dev/null
+        rm -f "$DAEMON_PID"
+        log "STOP 守护进程 (PID: $pid)"
+        echo "守护进程已停止"
+    else
+        rm -f "$DAEMON_PID"
+        echo "守护进程未运行"
+    fi
+    stop_all
+}
+
+daemon_status() {
+    local pid=$(read_pid "$DAEMON_PID")
+    if is_running "$pid"; then
+        local uptime=$(get_uptime "$pid")
+        echo "守护进程: 运行中 (PID: $pid, 运行: $uptime)"
+    else
+        [ -f "$DAEMON_PID" ] && rm -f "$DAEMON_PID"
+        echo "守护进程: 未运行"
+    fi
+    status_all
+}
+
+# ==================== 入口 ====================
+init_dirs
+cd "$SERVICE_DIR"
+
 case "${1:-help}" in
-    start)  start_all ;;
-    stop)   stop_all ;;
-    status) status ;;
-    daemon) start_all; daemon ;;
-    backfill|metrics|ws) start_$1 ;;
+    start)    start_all ;;
+    stop)     stop_all ;;
+    status)   status_all ;;
+    restart)  stop_all; sleep 1; start_all ;;
+    daemon)   daemon_start ;;
+    daemon-stop) daemon_stop ;;
+    daemon-status) daemon_status ;;
+    _monitor) monitor_loop ;;
+    backfill|metrics|ws) start_component "$1" ;;
     *)
-        echo "用法: $0 {start|stop|status|daemon|backfill|metrics|ws}"
-        echo "  start   - 启动全部服务"
-        echo "  stop    - 停止全部服务"
-        echo "  status  - 查看状态"
-        echo "  daemon  - 启动 + 守护（自动重启）"
+        echo "用法: $0 {start|stop|status|restart|daemon|daemon-stop|daemon-status}"
+        echo ""
+        echo "  start         启动全部服务"
+        echo "  stop          停止全部服务"
+        echo "  status        查看状态"
+        echo "  restart       重启全部"
+        echo "  daemon        启动 + 守护（自动重启挂掉的服务）"
+        echo "  daemon-stop   停止守护 + 全部服务"
+        echo "  daemon-status 查看守护进程和服务状态"
+        echo ""
+        echo "单独启动: $0 {backfill|metrics|ws}"
         exit 1
         ;;
 esac

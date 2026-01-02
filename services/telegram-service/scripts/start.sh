@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# trading-service 启动/守护一体脚本
-# 用法: ./scripts/start.sh {start|stop|status|daemon|once}
+# telegram-service 启动/守护一体脚本
+# 用法: ./scripts/start.sh {start|stop|status|daemon}
 
 set -uo pipefail
 
@@ -11,15 +11,17 @@ RUN_DIR="$SERVICE_DIR/pids"
 LOG_DIR="$SERVICE_DIR/logs"
 DAEMON_PID="$RUN_DIR/daemon.pid"
 DAEMON_LOG="$LOG_DIR/daemon.log"
-SERVICE_PID="$RUN_DIR/service.pid"
-SERVICE_LOG="$LOG_DIR/service.log"
+SERVICE_PID="$RUN_DIR/bot.pid"
+SERVICE_LOG="$LOG_DIR/bot.log"
 CHECK_INTERVAL="${CHECK_INTERVAL:-30}"
 STOP_TIMEOUT=10
 
-# 启动命令 (MODE: simple/listener)
-MODE="${MODE:-simple}"
-START_CMD="python3 -u src/simple_scheduler.py"
-[ "$MODE" = "listener" ] && START_CMD="python3 -u src/kline_listener.py"
+# 启动命令
+START_CMD="python3 -m src.main"
+
+# 环境变量（代理等）
+# export HTTPS_PROXY=http://127.0.0.1:9910
+# export HTTP_PROXY=http://127.0.0.1:9910
 
 # ==================== 工具函数 ====================
 log() {
@@ -58,7 +60,7 @@ start_service() {
     local pid=$(read_pid "$SERVICE_PID")
     
     if is_running "$pid"; then
-        echo "服务已运行 (PID: $pid)"
+        echo "Bot 已运行 (PID: $pid)"
         return 0
     fi
     
@@ -70,12 +72,12 @@ start_service() {
     
     sleep 1
     if is_running "$new_pid"; then
-        log "START 服务 (PID: $new_pid, MODE: $MODE)"
-        echo "✓ 服务已启动 (PID: $new_pid, MODE: $MODE)"
+        log "START Bot (PID: $new_pid)"
+        echo "✓ Bot 已启动 (PID: $new_pid)"
         return 0
     else
-        log "ERROR 服务启动失败"
-        echo "✗ 服务启动失败"
+        log "ERROR Bot 启动失败"
+        echo "✗ Bot 启动失败"
         rm -f "$SERVICE_PID"
         return 1
     fi
@@ -86,7 +88,7 @@ stop_service() {
     
     if ! is_running "$pid"; then
         rm -f "$SERVICE_PID"
-        echo "服务未运行"
+        echo "Bot 未运行"
         return 0
     fi
     
@@ -101,26 +103,26 @@ stop_service() {
     # 强制停止
     if is_running "$pid"; then
         kill -KILL "$pid" 2>/dev/null
-        log "KILL 服务 (PID: $pid) 强制终止"
+        log "KILL Bot (PID: $pid) 强制终止"
     else
-        log "STOP 服务 (PID: $pid)"
+        log "STOP Bot (PID: $pid)"
     fi
     
     rm -f "$SERVICE_PID"
-    echo "✓ 服务已停止"
+    echo "✓ Bot 已停止"
 }
 
 status_service() {
     local pid=$(read_pid "$SERVICE_PID")
     if is_running "$pid"; then
         local uptime=$(get_uptime "$pid")
-        echo "✓ 服务运行中 (PID: $pid, 运行: $uptime)"
+        echo "✓ Bot 运行中 (PID: $pid, 运行: $uptime)"
         echo ""
         echo "=== 最近日志 ==="
         tail -10 "$SERVICE_LOG" 2>/dev/null
     else
         [ -f "$SERVICE_PID" ] && rm -f "$SERVICE_PID"
-        echo "✗ 服务未运行"
+        echo "✗ Bot 未运行"
     fi
 }
 
@@ -131,7 +133,7 @@ monitor_loop() {
         local pid=$(read_pid "$SERVICE_PID")
         if ! is_running "$pid"; then
             [ -f "$SERVICE_PID" ] && rm -f "$SERVICE_PID"
-            log "CHECK 服务未运行，重启..."
+            log "CHECK Bot 未运行，重启..."
             start_service > /dev/null
         fi
         sleep "$CHECK_INTERVAL"
@@ -180,14 +182,6 @@ daemon_status() {
     status_service
 }
 
-# ==================== 一次性计算 ====================
-run_once() {
-    echo "=== 一次性全量计算 ==="
-    cd "$SERVICE_DIR"
-    source .venv/bin/activate
-    PYTHONPATH=src python3 -m indicator_service --intervals 1m,5m,15m,1h,4h,1d,1w
-}
-
 # ==================== 入口 ====================
 init_dirs
 cd "$SERVICE_DIR"
@@ -201,20 +195,16 @@ case "${1:-help}" in
     daemon-stop) daemon_stop ;;
     daemon-status) daemon_status ;;
     _monitor) monitor_loop ;;
-    once)     run_once ;;
     *)
-        echo "用法: $0 {start|stop|status|restart|daemon|daemon-stop|daemon-status|once}"
+        echo "用法: $0 {start|stop|status|restart|daemon|daemon-stop|daemon-status}"
         echo ""
-        echo "  start         启动服务"
-        echo "  stop          停止服务"
+        echo "  start         启动 Bot"
+        echo "  stop          停止 Bot"
         echo "  status        查看状态"
         echo "  restart       重启"
         echo "  daemon        启动 + 守护（自动重启）"
-        echo "  daemon-stop   停止守护 + 服务"
-        echo "  daemon-status 查看守护进程和服务状态"
-        echo "  once          一次性全量计算"
-        echo ""
-        echo "环境变量: MODE=simple(默认) 或 MODE=listener"
+        echo "  daemon-stop   停止守护 + Bot"
+        echo "  daemon-status 查看守护进程和 Bot 状态"
         exit 1
         ;;
 esac

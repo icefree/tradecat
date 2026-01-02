@@ -1,13 +1,15 @@
 # Trading Service
 
-指标计算服务，从 TimescaleDB 读取 K 线数据，计算 39 个技术指标，写入 SQLite (market_data.db)。
+指标计算服务，从 TimescaleDB 读取 K线数据，计算 38 个技术指标，写入 SQLite。
 
 ## 功能
 
-- **39 个技术指标** - MACD、KDJ、RSI、布林带、VPVR、期货情绪等
-- **高优先级识别** - 自动识别交易活跃币种优先计算
-- **多周期支持** - k线 1m/5m/15m/1h/4h/1d/1w，期货数据 /5m/15m/1h/4h/1d/1w
-- **并行计算** - 多线程/多进程可选
+| 功能 | 说明 |
+|:---|:---|
+| **38 个技术指标** | MACD、KDJ、RSI、布林带、K线形态、期货情绪等 |
+| **高优先级识别** | 自动识别 130+ 活跃币种优先计算 |
+| **多周期支持** | K线 1m/5m/15m/1h/4h/1d/1w |
+| **并行计算** | 多线程计算，< 3分钟完成全量 |
 
 ## 目录结构
 
@@ -18,12 +20,15 @@ src/
 │   ├── async_full_engine.py # 异步计算引擎
 │   └── event_engine.py      # 事件驱动引擎
 ├── db/
-│   ├── reader.py            # TimescaleDB 读取 + SQLite 写入
+│   ├── reader.py            # TimescaleDB 读取
 │   └── cache.py             # 数据缓存
 ├── indicators/
 │   ├── base.py              # 指标基类 + 注册表
-│   ├── incremental/         # 增量指标 (9个)
-│   └── batch/               # 批量指标 (30个)
+│   ├── incremental/         # 增量指标
+│   └── batch/               # 批量指标 (38个)
+│       ├── k_pattern.py     # K线形态检测
+│       ├── bollinger.py     # 布林带
+│       └── ...
 ├── observability/           # 可观测性
 ├── config.py                # 配置
 ├── simple_scheduler.py      # 轮询调度器
@@ -32,89 +37,110 @@ src/
 
 ## 快速开始
 
+### 环境要求
+
+- Python >= 3.10
+- TimescaleDB (端口 5433)
+- TA-Lib (系统库)
+
+### 安装
+
+```bash
+# 方式一：使用初始化脚本
+cd /path/to/tradecat
+./scripts/init-service.sh trading-service
+
+# 方式二：手动安装
+cd services/trading-service
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# 安装形态检测库
+pip install m-patternpy
+pip install tradingpattern --no-deps
+```
+
+### 配置
+
+```bash
+cp config/.env.example config/.env
+vim config/.env
+```
+
 ### 启动
 
 ```bash
-# 方式一：启动脚本（推荐）
-./scripts/start.sh          # 启动轮询模式
-./scripts/start.sh stop     # 停止
-./scripts/start.sh status   # 状态
+# 启动轮询模式（推荐）
+./scripts/start.sh start
 
-# 方式二：一次性计算
+# 查看状态
+./scripts/start.sh status
+
+# 停止
+./scripts/start.sh stop
+
+# 一次性计算
 python3 -m src --once
 
-# 方式三：指定参数
+# 指定参数
 python3 -m src --once --symbols BTCUSDT,ETHUSDT --intervals 5m,15m
-
-# 方式四：轮询调度器
-python3 src/simple_scheduler.py
 ```
 
-### 运行模式
+## 配置说明
 
-| 模式 | 命令 | 说明 |
-|------|------|------|
-| 一次性 | `--once` | 计算一次后退出，适合 crontab |
-| 异步持续 | `--full-async` | 持续运行，自动检测新数据 |
-| 事件驱动 | `--event` | 监听 PostgreSQL NOTIFY |
-| 轮询 | `simple_scheduler.py` | 每10秒检查新数据 |
-
-## 配置
-
-### 环境变量
+### 环境变量 (config/.env)
 
 | 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `DATABASE_URL` | `postgresql://...@localhost:5433/market_data` | TimescaleDB |
-| `INDICATOR_SQLITE_PATH` | `telegram-service/data/market_data.db` | SQLite 输出 |
-| `MAX_WORKERS` | `6` | 并行线程数 |
-| `COMPUTE_BACKEND` | `thread` | 计算后端 (thread/process) |
-| `KLINE_INTERVALS` | `1m,5m,15m,1h,4h,1d,1w` | K线周期 |
-| `FUTURES_INTERVALS` | `5m,15m,1h,4h,1d,1w` | 期货周期 |
+|:---|:---|:---|
+| `DATABASE_URL` | - | TimescaleDB 连接串 |
+| `INDICATOR_SQLITE_PATH` | - | SQLite 输出路径 |
+| `MAX_WORKERS` | 4 | 并行线程数 |
+| `COMPUTE_BACKEND` | thread | 计算后端 |
 
 ### .env.example
 
 ```bash
 DATABASE_URL=postgresql://user:password@localhost:5432/market_data
-INDICATOR_SQLITE_PATH=/path/to/market_data.db
+INDICATOR_SQLITE_PATH=/path/to/tradecat/libs/database/services/telegram-service/market_data.db
 MAX_WORKERS=4
 COMPUTE_BACKEND=thread
 ```
 
-## 指标列表
+## 指标列表 (38个)
 
-### 增量指标 (9个)
-- 基础数据同步器、MACD柱状扫描器、KDJ随机指标扫描器
-- ATR波幅扫描器、G/C点扫描器、OBV能量潮扫描器
-- CVD信号排行榜、主动买卖比扫描器、期货情绪元数据
+### 趋势指标
+- EMA、MACD、SuperTrend、ADX、Ichimoku、Donchian、Keltner、趋势线
 
-### 批量指标 (30个)
-- 布林带、VPVR、VWAP、流动性、MFI资金流量
-- K线形态、趋势线、支撑阻力、SuperTrend
-- 智能RSI、大资金操盘、量能斐波狙击、零延迟趋势
-- 量能信号、多空信号、剥头皮信号、谐波信号
-- 期货情绪聚合表、期货缺口监控、数据监控
-- ADX、CCI、WilliamsR、Donchian、Keltner、Ichimoku 等
+### 动量指标
+- RSI、KDJ、CCI、WilliamsR、MFI、RSI谐波
+
+### 波动指标
+- 布林带、ATR、ATR波幅、支撑阻力
+
+### 成交量指标
+- OBV、CVD、VWAP、成交量比率、流动性、VPVR
+
+### K线形态
+- 61种蜡烛形态 (TA-Lib)
+- 价格形态：头肩、双顶、三角形、楔形、通道 (patternpy)
+
+### 期货指标
+- 持仓量、多空比、主动买卖比、期货情绪聚合
 
 ## 数据流
 
 ```
-TimescaleDB (candles_1m/5m/...)
+TimescaleDB (candles_1m)
         │
         ▼
     DataReader (批量读取)
         │
         ▼
-    DataCache (内存缓存)
+    Engine (并行计算 38 指标)
         │
         ▼
-    Engine (并行计算)
-        │
-        ▼
-    DataWriter (批量写入)
-        │
-        ▼
-    SQLite (market_data.db)
+    SQLite (market_data.db, 38张表)
         │
         ▼
     telegram-service (读取展示)
@@ -122,11 +148,52 @@ TimescaleDB (candles_1m/5m/...)
 
 ## 输出
 
-写入 `market_data.db`，每个指标一张表：
+写入 `libs/database/services/telegram-service/market_data.db`：
 
-| 表名 | 说明 |
-|------|------|
+| 表名示例 | 说明 |
+|:---|:---|
 | `基础数据同步器.py` | 价格、成交量、成交额 |
-| `MACD柱状扫描器.py` | MACD、DIF、DEA |
+| `K线形态扫描器.py` | 形态类型、检测数量、强度 |
 | `期货情绪聚合表.py` | 持仓、多空比、情绪分 |
-| ... | 共 39 张表 |
+
+## 日志
+
+```bash
+tail -f logs/simple_scheduler.log
+```
+
+## 常见问题
+
+### TA-Lib 安装失败
+
+```bash
+# 先安装系统库
+wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
+tar -xzf ta-lib-0.4.0-src.tar.gz
+cd ta-lib && ./configure --prefix=/usr && make && sudo make install
+cd .. && rm -rf ta-lib ta-lib-0.4.0-src.tar.gz
+
+# 再安装 Python 包
+pip install TA-Lib
+```
+
+### K线形态显示"无形态"
+
+```bash
+# 安装形态检测库
+pip install m-patternpy
+pip install tradingpattern --no-deps  # 忽略 numpy 版本冲突
+
+# 重启服务
+./scripts/start.sh restart
+```
+
+### 计算耗时过长
+
+```bash
+# 检查高优先级币种数量
+grep "高优先级" logs/simple_scheduler.log
+
+# 减少并发
+MAX_WORKERS=2 ./scripts/start.sh start
+```
