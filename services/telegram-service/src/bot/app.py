@@ -257,7 +257,6 @@ def format_beijing_time(dt_str, format_str="%Y-%m-%d %H:%M:%S"):
 
 # 配置（全部改由环境变量管理）
 BOT_TOKEN = _require_env('BOT_TOKEN', required=True)
-TELEGRAM_BOT_TOKEN = BOT_TOKEN  # 为了兼容性添加别名
 BINANCE_FUTURES_URL = 'https://fapi.binance.com'
 BINANCE_SPOT_URL = 'https://api.binance.com'
 BINANCE_API_DISABLED = _require_env('BINANCE_API_DISABLED', default='1') == '1'
