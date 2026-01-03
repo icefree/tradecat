@@ -13,22 +13,21 @@ if str(AI_SERVICE_PATH) not in sys.path:
     sys.path.insert(0, str(AI_SERVICE_PATH))
 
 # 导入 ai-service 模块
-from src.bot import (
+from src import (
     AIAnalysisHandler,
     get_ai_handler,
     register_ai_handlers,
-    prompt_registry,
-    SELECTING_COIN,
-    SELECTING_INTERVAL,
+    run_analysis,
+    PromptRegistry,
 )
-from src.process import run_process
+from src.bot import SELECTING_COIN, SELECTING_INTERVAL
 
 __all__ = [
     "AIAnalysisHandler",
     "get_ai_handler",
     "register_ai_handlers",
-    "prompt_registry",
-    "run_process",
+    "run_analysis",
+    "PromptRegistry",
     "SELECTING_COIN",
     "SELECTING_INTERVAL",
 ]
