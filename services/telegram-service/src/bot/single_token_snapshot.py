@@ -544,11 +544,11 @@ def render_pattern_panel(symbol: str, enabled_periods: Dict[str, bool] | None = 
         
         lines.append(f"📊 {p} ({count}个形态)")
         if bullish:
-            lines.append(f"🟢 看涨: {', '.join(bullish)}")
+            lines.append(f"🟢 {', '.join(bullish)}")
         if bearish:
-            lines.append(f"🔴 看跌: {', '.join(bearish)}")
+            lines.append(f"🔴 {', '.join(bearish)}")
         if neutral:
-            lines.append(f"⚪ 中性: {', '.join(neutral)}")
+            lines.append(f"⚪ {', '.join(neutral)}")
         lines.append("")
     
     lines.append("```")
