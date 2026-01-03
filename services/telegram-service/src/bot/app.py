@@ -379,9 +379,7 @@ def build_single_snapshot_keyboard(enabled_periods: dict, panel: str, enabled_ca
         return rows
 
     tables = [t for t in TABLE_FIELDS.get(panel, {}).keys()]
-    # 过滤黑名单标签
-    tables = [t for t in tables if _clean(t) not in {"费率", "爆仓", "新鲜度"}]
-    # 自适应分行
+    # 自适应分行（期货面板已精简为分组名，无需过滤）
     layout_rows = _layout([_clean(t) for t in tables], max_w=22)
     for row_labels in layout_rows:
         row: list[InlineKeyboardButton] = []
