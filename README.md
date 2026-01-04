@@ -15,15 +15,15 @@
 ---
 
 <p>
-  <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/TimescaleDB-时序数据库-orange?style=flat-square&logo=postgresql&logoColor=white" alt="TimescaleDB">
-  <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="License">
+  <img src="https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/TimescaleDB-时序数据库-orange?style=for-the-badge&logo=postgresql&logoColor=white" alt="TimescaleDB">
+  <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License">
 </p>
 
 <p>
-  <a href="https://t.me/tradecat_ai_channel"><img src="https://img.shields.io/badge/Telegram-频道-blue?style=flat-square&logo=telegram" alt="Telegram"></a>
-  <a href="https://t.me/glue_coding"><img src="https://img.shields.io/badge/Telegram-交流群-blue?style=flat-square&logo=telegram" alt="交流群"></a>
-  <a href="https://x.com/123olp"><img src="https://img.shields.io/badge/Twitter-@123olp-black?style=flat-square&logo=x" alt="Twitter"></a>
+  <a href="https://t.me/tradecat_ai_channel"><img src="https://img.shields.io/badge/Telegram-频道-blue?style=for-the-badge&logo=telegram" alt="Telegram"></a>
+  <a href="https://t.me/glue_coding"><img src="https://img.shields.io/badge/Telegram-交流群-blue?style=for-the-badge&logo=telegram" alt="交流群"></a>
+  <a href="https://x.com/123olp"><img src="https://img.shields.io/badge/Twitter-@123olp-black?style=for-the-badge&logo=x" alt="Twitter"></a>
 </p>
 
 </div>
