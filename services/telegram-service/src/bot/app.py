@@ -996,7 +996,7 @@ class UserRequestHandler:
                 InlineKeyboardButton("🤖 AI分析", callback_data="start_coin_analysis"),
             ],
             [
-                InlineKeyboardButton("🏠 主菜单", callback_data="main_menu"),
+                InlineKeyboardButton("🔔 信号", callback_data="signal_menu"),
                 InlineKeyboardButton("ℹ️ 帮助", callback_data="help"),
             ],
         ]
@@ -1090,6 +1090,7 @@ class UserRequestHandler:
                 KeyboardButton("🤖 AI分析"),
             ],
             [
+                KeyboardButton("🔔 信号"),
                 KeyboardButton("🏠 主菜单"),
                 KeyboardButton("ℹ️ 帮助"),
             ]
@@ -3666,9 +3667,48 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.answer(f"AI分析失败: {e}", show_alert=True)
             return
 
-    # 其他信号功能占位
-    if button_data in {"signal_menu", "aggregated_alerts"}:
-        await query.answer("功能暂未开放")
+    # 信号开关界面
+    if button_data == "signal_menu" or button_data.startswith("sig_"):
+        try:
+            from signals import ui as signal_ui
+            if button_data == "signal_menu":
+                await query.answer()
+                await query.edit_message_text(
+                    signal_ui.get_menu_text(user_id),
+                    reply_markup=signal_ui.get_menu_kb(user_id),
+                    parse_mode='HTML'
+                )
+            else:
+                await signal_ui.handle(update, context)
+            return
+        except Exception as e:
+            logger.error(f"信号界面失败: {e}")
+            await query.answer(f"信号界面失败: {e}", show_alert=True)
+            return
+
+    # 信号推送的币种分析跳转
+    if button_data.startswith("single_query_"):
+        symbol = button_data.replace("single_query_", "")
+        await query.answer()
+        try:
+            if os.getenv("DISABLE_SINGLE_TOKEN_QUERY", "1") == "1":
+                await query.edit_message_text("⚠️ 单币查询功能暂时关闭")
+                return
+            from bot.single_token_snapshot import SingleTokenSnapshot
+            enabled_periods = {"1m": False, "5m": False, "15m": True, "1h": True, "4h": True, "1d": True, "1w": False}
+            ustate = user_handler.user_states.setdefault(user_id, {})
+            ustate["single_symbol"] = symbol
+            ustate["single_panel"] = "basic"
+            ustate["single_periods"] = enabled_periods
+            ustate["single_cards"] = {}
+            ustate["single_page"] = 0
+            snap = SingleTokenSnapshot()
+            text, pages = snap.render_table(symbol, panel="basic", enabled_periods=enabled_periods, enabled_cards={}, page=0)
+            kb = build_single_snapshot_keyboard(enabled_periods, "basic", {}, page=0, pages=pages)
+            await query.edit_message_text(text, reply_markup=kb, parse_mode='Markdown')
+        except Exception as e:
+            logger.error(f"单币查询跳转失败: {e}")
+            await query.edit_message_text(f"❌ 查询失败: {e}")
         return
 
     # 点击频率限制
@@ -5251,7 +5291,8 @@ async def handle_keyboard_message(update: Update, context: ContextTypes.DEFAULT_
         "💧 资金流向排行": "money_flow",
         "🧊 市场深度排行": "market_depth",
         "📊 数据面板": "ranking_menu",
-        "🚨 信号": "aggregated_alerts",
+        "🚨 信号": "signal_menu",
+        "🔔 信号": "signal_menu",
         "🤖 AI分析": "start_coin_analysis",
         "🔍 币种查询": "coin_query",
         "🏠 主菜单": "main_menu",
@@ -5373,6 +5414,20 @@ async def handle_keyboard_message(update: Update, context: ContextTypes.DEFAULT_
                     reply_markup=placeholder_kb,
                     parse_mode='Markdown'
                 )
+                return
+            
+            # 信号开关界面
+            if action == "signal_menu":
+                try:
+                    from signals import ui as signal_ui
+                    await update.message.reply_text(
+                        signal_ui.get_menu_text(update.effective_user.id),
+                        reply_markup=signal_ui.get_menu_kb(update.effective_user.id),
+                        parse_mode='HTML'
+                    )
+                except Exception as e:
+                    logger.error(f"信号界面失败: {e}")
+                    await update.message.reply_text(f"❌ 信号界面失败: {e}")
                 return
             
             if action == "position_ranking":

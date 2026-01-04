@@ -6,27 +6,16 @@
 
 # 🐱 交易猫
 
-**数据分析/交易数据平台**
+**toy-level 数据分析/交易数据平台**
 
-*全部市场，全部策略，全部数据，全部方法，交易一切，监控一切*
+*全部市场，全部数据，全部方法，分析一切，交易一切，监控一切*
 
 ---
 
 <p>
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/TimescaleDB-99GB_K线-orange?style=for-the-badge&logo=postgresql&logoColor=white" alt="TimescaleDB">
-  <img src="https://img.shields.io/badge/数据量-3.73亿条-brightgreen?style=for-the-badge" alt="数据量">
-  <img src="https://img.shields.io/badge/币种-615+-green?style=for-the-badge" alt="币种">
-  <img src="https://img.shields.io/badge/指标-38个-purple?style=for-the-badge" alt="指标">
+  <img src="https://img.shields.io/badge/TimescaleDB-99GB-orange?style=for-the-badge&logo=postgresql&logoColor=white" alt="TimescaleDB">
   <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License">
-</p>
-
-<p>
-  <a href="#-快速开始"><img src="https://img.shields.io/badge/🚀_快速开始-5分钟上手-red?style=for-the-badge" alt="快速开始"></a>
-  <a href="#-架构设计"><img src="https://img.shields.io/badge/🏗️_架构-微服务设计-blue?style=for-the-badge" alt="架构"></a>
-  <a href="#-数据规模"><img src="https://img.shields.io/badge/📊_数据-海量存储-green?style=for-the-badge" alt="数据"></a>
-  <a href="#-技术指标"><img src="https://img.shields.io/badge/📈_指标-38个全覆盖-orange?style=for-the-badge" alt="指标"></a>
-  <a href="#-telegram-bot"><img src="https://img.shields.io/badge/🤖_Bot-实时推送-cyan?style=for-the-badge" alt="Bot"></a>
 </p>
 
 <p>
@@ -427,15 +416,34 @@ K线维度:
 </tr>
 </table>
 
-### Bot 命令
+### 命令与触发方式
+
+| 触发方式 | 功能 | 说明 |
+|:---|:---|:---|
+| `BTC!` | 单币查询 | 交互式多面板查看 |
+| `BTC!!` | 完整TXT导出 | 下载 psql 风格完整报告 |
+| `BTC@` | AI分析 | 威科夫深度市场分析 |
+| `/data` | 数据面板 | 访问排行榜卡片 |
+| `/ai` | AI分析 | 进入AI币种选择 |
+| `/query` | 币种查询 | 显示可查询币种 |
+| `/help` | 帮助 | 使用说明 |
+
+### 常驻键盘布局
 
 ```
-/start          - 启动 Bot
-/help           - 帮助信息
-/rank <指标>    - 查看排行榜
-/detail <币种>  - 查看单币详情
-/alert          - 管理告警
+┌─────────────┬─────────────┬─────────────┐
+│ 📊 数据面板 │ 🔍 币种查询 │  🤖 AI分析  │
+├─────────────┴──────┬──────┴─────────────┤
+│     🏠 主菜单      │      ℹ️ 帮助       │
+└────────────────────┴────────────────────┘
 ```
+
+### 单币查询面板
+
+1. **基础面板** - 布林带、KDJ、MACD、RSI、OBV、量比
+2. **期货面板** - 持仓量、多空比、情绪指标
+3. **高级面板** - 支撑阻力、ATR、流动性、趋势、VWAP
+4. **形态面板** - K线形态识别 (61种)
 
 ---
 

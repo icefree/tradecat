@@ -103,8 +103,11 @@ ruff check services/
 | data-service | `cd services/data-service && ./scripts/start.sh start` | `./scripts/start.sh stop` | `./scripts/start.sh status` |
 | trading-service | `cd services/trading-service && ./scripts/start.sh start` | `./scripts/start.sh stop` | `./scripts/start.sh status` |
 | telegram-service | `cd services/telegram-service && ./scripts/start.sh start` | `./scripts/start.sh stop` | `./scripts/start.sh status` |
+| ai-service | 作为 telegram-service 子模块运行 | - | - |
 | order-service | `cd services/order-service && python -m src.market-maker.main` | Ctrl+C | - |
-| 全部（守护） | `./scripts/start.sh daemon` | `./scripts/start.sh daemon-stop` | `./scripts/start.sh status` |
+| 全部 | `./scripts/start.sh start` | `./scripts/start.sh stop` | `./scripts/start.sh status` |
+
+**注意**: data-service 默认以守护模式启动，自动重启挂掉的服务（30秒检查一次）。
 
 ### 3.3 Make 快捷命令
 
@@ -114,7 +117,6 @@ ruff check services/
 | `make start` | 启动所有服务 |
 | `make stop` | 停止所有服务 |
 | `make status` | 查看服务状态 |
-| `make daemon` | 启动守护进程 |
 | `make verify` | 代码验证 |
 | `make clean` | 清理缓存 |
 
