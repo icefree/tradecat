@@ -62,7 +62,8 @@
 
 ---
 
-## ✨ 核心特性
+<details open>
+<summary><strong>点击展开👉 ✨ 核心特性</strong></summary>
 
 <table>
 <tr>
@@ -128,9 +129,12 @@
 </tr>
 </table>
 
+</details>
+
 ---
 
-## 🏗️ 架构设计
+<details open>
+<summary><strong>点击展开👉 🏗️ 架构设计</strong></summary>
 
 ### 系统架构图
 
@@ -208,10 +212,12 @@
                                    telegram-service ──▶ 用户
 ```
 
+</details>
 
 ---
 
-## 📊 数据规模
+<details open>
+<summary><strong>点击展开👉 📊 数据规模</strong></summary>
 
 **🔗 历史数据下载**: [HuggingFace 数据集](https://huggingface.co/datasets/123olp/binance-futures-ohlcv-2018-2026)
 
@@ -300,9 +306,12 @@ zstd -d futures_metrics_5m.bin.zst -c | psql -h localhost -p 5433 -U postgres -d
 
 </details>
 
+</details>
+
 ---
 
-## 📈 技术指标
+<details open>
+<summary><strong>点击展开👉 📈 技术指标</strong></summary>
 
 <details>
 <summary><strong>点击展开👉 🔥 趋势指标 (8个)</strong></summary>
@@ -417,10 +426,12 @@ K线维度:
   - 多空比极端 (>2.0 或 <0.5)
 ```
 
+</details>
 
 ---
 
-## 🤖 Telegram Bot
+<details open>
+<summary><strong>点击展开👉 🤖 Telegram Bot</strong></summary>
 
 ### 功能概览
 
@@ -482,9 +493,12 @@ K线维度:
 3. **高级面板** - 支撑阻力、ATR、流动性、趋势、VWAP
 4. **形态面板** - K线形态识别 (61种)
 
+</details>
+
 ---
 
-## 🚀 快速开始
+<details open>
+<summary><strong>点击展开👉 🚀 快速开始</strong></summary>
 
 ### 🤖 AI 一键安装（推荐）
 
@@ -627,9 +641,12 @@ vim config/.env
 
 </details>
 
+</details>
+
 ---
 
-## 📁 目录结构
+<details open>
+<summary><strong>点击展开👉 📁 目录结构</strong></summary>
 
 ```
 tradecat/
@@ -699,10 +716,12 @@ tradecat/
 └── CONTRIBUTING.md                 # 贡献指南
 ```
 
+</details>
 
 ---
 
-## 🔧 运维指南
+<details open>
+<summary><strong>点击展开👉 🔧 运维指南</strong></summary>
 
 ### 服务管理
 
@@ -941,6 +960,8 @@ ss -tlnp | grep 5433
 # 检查连接
 PGPASSWORD=postgres psql -h localhost -p 5433 -U postgres -c "\l"
 ```
+
+</details>
 
 </details>
 
