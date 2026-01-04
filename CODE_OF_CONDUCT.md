@@ -59,7 +59,7 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement at
-**Telegram: [@glue_coding](https://t.me/glue_coding)** or **Twitter: [@123olp](https://x.com/123olp)**.
+**Telegram: [glue_coding](https://t.me/glue_coding)** or **Twitter: [123olp](https://x.com/123olp)**.
 
 All complaints will be reviewed and investigated promptly and fairly.
 

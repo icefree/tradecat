@@ -82,5 +82,5 @@ docs: 更新 README 快速开始指南
 
 ## 联系方式
 
-- Telegram 交流群: [@glue_coding](https://t.me/glue_coding)
-- Twitter: [@123olp](https://x.com/123olp)
+- Telegram 交流群: [glue_coding](https://t.me/glue_coding)
+- Twitter: [123olp](https://x.com/123olp)

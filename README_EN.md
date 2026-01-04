@@ -29,7 +29,7 @@
 <p>
   <a href="https://t.me/tradecat_ai_channel"><img src="https://img.shields.io/badge/Telegram-Channel-blue?style=for-the-badge&logo=telegram" alt="Telegram"></a>
   <a href="https://t.me/glue_coding"><img src="https://img.shields.io/badge/Telegram-Group-blue?style=for-the-badge&logo=telegram" alt="Group"></a>
-  <a href="https://x.com/123olp"><img src="https://img.shields.io/badge/Twitter-@123olp-black?style=for-the-badge&logo=x" alt="Twitter"></a>
+  <a href="https://x.com/123olp"><img src="https://img.shields.io/badge/Twitter-123olp-black?style=for-the-badge&logo=x" alt="Twitter"></a>
 </p>
 
 </div>

@@ -12,8 +12,8 @@
 
 请通过以下方式私下报告：
 
-- **Telegram**: [@123olp](https://t.me/123olp)
-- **Twitter DM**: [@123olp](https://x.com/123olp)
+- **Telegram**: [123olp](https://t.me/123olp)
+- **Twitter DM**: [123olp](https://x.com/123olp)
 
 我们会在 48 小时内回复，并在确认后尽快修复。
 
